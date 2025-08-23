@@ -16,5 +16,8 @@ namespace Order.Data
         Task UpdateOrderStatusAsync(Guid orderId, string newStatus); // Update status of the order
 
         Task<Guid> AddOrderAsync(OrderDetail orderDetail); // Add a new order and return its ID
+
+        Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync(); // Get monthly profits
+
     }
 }

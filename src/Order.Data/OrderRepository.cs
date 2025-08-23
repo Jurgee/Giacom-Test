@@ -126,7 +126,7 @@ namespace Order.Data
                     .SingleOrDefaultAsync();
                 if (status != null)
                 {
-                    order.StatusId = status.Id;
+                    order.StatusId = status.Id; // Update the order's status ID
                     await _orderContext.SaveChangesAsync();
                 }
                 else // if the status does not exist
@@ -155,7 +155,7 @@ namespace Order.Data
             if (createdStatus == null)
                 throw new InvalidOperationException("Default status 'Created' not found.");
 
-            var newOrder = new Entities.Order // Map OrderDetail to Order entity
+            var newOrder = new Entities.Order // Create a new Order entity
             {
                 Id = Guid.NewGuid().ToByteArray(),
                 CustomerId = order.CustomerId.ToByteArray(),
@@ -167,7 +167,7 @@ namespace Order.Data
 
             foreach (var item in order.Items)
             {
-                newOrder.Items.Add(new Entities.OrderItem // Map OrderDetail.Item to OrderItem entity
+                newOrder.Items.Add(new Entities.OrderItem // Add items to the new order
                 {
                     Id = Guid.NewGuid().ToByteArray(),
                     ProductId = item.ProductId.ToByteArray(),
@@ -182,6 +182,33 @@ namespace Order.Data
             return new Guid(newOrder.Id);
         }
 
-
+        /// <summary>
+        /// Get monthly profits calculated from completed orders.
+        /// </summary>
+        /// <returns>
+        /// Monthly profits with year, month, and total profit.
+        /// </returns>
+        public async Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync()
+        {
+            var profits = await _orderContext.Order
+                .Include(x => x.Items) // Include order items
+                .ThenInclude(i => i.Product) // Include product details for cost and price
+                .Where(x => x.Status.Name == "Completed")
+                .GroupBy(x => new { x.CreatedDate.Year, x.CreatedDate.Month })
+                .Select(g => new MonthlyProfit // Calculate profit per month
+                {
+                    Year = g.Key.Year,
+                    Month = g.Key.Month,
+                    TotalProfit = g.Sum(o =>
+                        o.Items.Sum(i =>
+                            ((i.Product.UnitPrice - i.Product.UnitCost) * (i.Quantity ?? 0)) // Calculate profit per item and sum
+                        )
+                    )
+                })
+                .OrderByDescending(mp => mp.Year) // Order by year descending
+                .ThenByDescending(mp => mp.Month) // Then by month descending
+                .ToListAsync();
+            return profits;
+        }
     }
 }
