@@ -43,5 +43,11 @@ namespace Order.Service
             var newOrderId = await _orderRepository.AddOrderAsync(orderDetail);
             return newOrderId;
         }
+
+        public async Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync()
+        {
+            var profits = await _orderRepository.GetMonthlyProfitsAsync();
+            return profits;
+        }
     }
 }

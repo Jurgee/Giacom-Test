@@ -17,6 +17,7 @@ namespace Order.Service
 
         Task<Guid> AddOrderAsync(OrderDetail orderDetail); // Add a new order and return its ID
 
+        Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync(); // Get monthly profits
 
     }
 }
