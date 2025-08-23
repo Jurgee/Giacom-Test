@@ -277,6 +277,89 @@ namespace Order.Service.Tests
             Assert.AreEqual(0.9m * 2, firstItem.TotalPrice, "First item total price should be calculated correctly.");
         }
 
+        [Test]
+        public async Task GetMonthlyProfitsAsync_ReturnsCorrectProfits()
+        {
+
+            // Arrange
+            var completedStatusId = Guid.NewGuid().ToByteArray();
+
+            // Add "Completed" status to reference data
+            _orderContext.OrderStatus.Add(new OrderStatus
+            {
+                Id = completedStatusId,
+                Name = "Completed"
+            });
+            await _orderContext.SaveChangesAsync();
+
+            // Add completed orders in different months
+            var orderId1 = Guid.NewGuid();
+            _orderContext.Order.Add(new Data.Entities.Order
+            {
+                Id = orderId1.ToByteArray(),
+                ResellerId = Guid.NewGuid().ToByteArray(),
+                CustomerId = Guid.NewGuid().ToByteArray(),
+                CreatedDate = new DateTime(2023, 1, 15),
+                StatusId = completedStatusId
+            });
+            _orderContext.OrderItem.Add(new Data.Entities.OrderItem()
+            {
+                Id = Guid.NewGuid().ToByteArray(),
+                OrderId = orderId1.ToByteArray(),
+                ServiceId = _orderServiceEmailId,
+                ProductId = _orderProductEmailId,
+                Quantity = 2,
+
+            });
+
+            var orderId2 = Guid.NewGuid();
+            _orderContext.Order.Add(new Data.Entities.Order
+            {
+                Id = orderId2.ToByteArray(),
+                ResellerId = Guid.NewGuid().ToByteArray(),
+                CustomerId = Guid.NewGuid().ToByteArray(),
+                CreatedDate = new DateTime(2023, 1, 20),
+                StatusId = completedStatusId
+            });
+            _orderContext.OrderItem.Add(new Data.Entities.OrderItem()
+            {
+                Id = Guid.NewGuid().ToByteArray(),
+                OrderId = orderId2.ToByteArray(),
+                ServiceId = _orderServiceEmailId,
+                ProductId = _orderProductEmailId,
+                Quantity = 1
+            });
+            var orderId3 = Guid.NewGuid();
+            _orderContext.Order.Add(new Data.Entities.Order
+            {
+                Id = orderId3.ToByteArray(),
+                ResellerId = Guid.NewGuid().ToByteArray(),
+                CustomerId = Guid.NewGuid().ToByteArray(),
+                CreatedDate = new DateTime(2023, 2, 5),
+                StatusId = completedStatusId
+            });
+            _orderContext.OrderItem.Add(new Data.Entities.OrderItem()
+            {
+                Id = Guid.NewGuid().ToByteArray(),
+                OrderId = orderId3.ToByteArray(),
+                ServiceId = _orderServiceEmailId,
+                ProductId = _orderProductEmailId,
+                Quantity = 3
+            });
+            await _orderContext.SaveChangesAsync();
+            // Act
+
+            var profits = await _orderService.GetMonthlyProfitsAsync();
+
+            // Assert
+            Assert.AreEqual(2, profits.Count(), "Should return profits for 2 months.");
+            var januaryProfit = profits.SingleOrDefault(p => p.Year == 2023 && p.Month == 1);
+            var februaryProfit = profits.SingleOrDefault(p => p.Year == 2023 && p.Month == 2);
+            Assert.NotNull(januaryProfit, "January profit should be present.");
+            Assert.NotNull(februaryProfit, "February profit should be present.");
+            Assert.AreEqual(0.3m, januaryProfit.TotalProfit, "January profit should be calculated correctly.");
+            Assert.AreEqual(0.3m, februaryProfit.TotalProfit, "February profit should be calculated correctly.");
+        }
 
 
         private async Task AddOrder(Guid orderId, int quantity)

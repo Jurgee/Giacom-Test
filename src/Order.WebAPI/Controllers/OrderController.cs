@@ -46,14 +46,15 @@ namespace OrderService.WebAPI.Controllers
 
         // Get all orders by their status (e.g., "Created", "Processing", "Completed", "Failed")
         [HttpGet("status/{status}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]      // Success
+        [ProducesResponseType(StatusCodes.Status200OK)] // Success
         [ProducesResponseType(StatusCodes.Status404NotFound)] // No orders found
         public async Task<ActionResult<IEnumerable<OrderSummary>>> GetOrdersByStatus(string status)
         {
             var orders = await _orderService.GetOrdersByStatusAsync(status);
 
             if (!orders.Any())
-                return NotFound(new { message = $"No orders found with status '{status}'." }); // Return 404 if no orders found
+                return NotFound(new
+                { message = $"No orders found with status '{status}'." }); // Return 404 if no orders found
 
             return Ok(orders);
         }
@@ -88,6 +89,14 @@ namespace OrderService.WebAPI.Controllers
             return CreatedAtAction(nameof(GetOrderById), new { orderId = newOrderId }, new { orderId = newOrderId });
         }
 
+        // Get monthly profits
+        [HttpGet("profits/monthly")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMonthlyProfits()
+        {
+            var profits = await _orderService.GetMonthlyProfitsAsync();
+            return Ok(profits);
 
+        }
     }
 }
