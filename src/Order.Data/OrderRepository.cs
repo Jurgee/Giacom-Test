@@ -190,25 +190,25 @@ namespace Order.Data
         /// </returns>
         public async Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync()
         {
-            var profits = await _orderContext.Order
-                .Include(x => x.Items) // Include order items
-                .ThenInclude(i => i.Product) // Include product details for cost and price
-                .Where(x => x.Status.Name == "Completed")
-                .GroupBy(x => new { x.CreatedDate.Year, x.CreatedDate.Month })
-                .Select(g => new MonthlyProfit // Calculate profit per month
+            var orders = await _orderContext.Order
+                .Include(o => o.Items)
+                .ThenInclude(i => i.Product)
+                .Where(o => o.Status.Name == "Completed")
+                .ToListAsync(); // load into memory
+
+            var profits = orders
+                .GroupBy(o => new { o.CreatedDate.Year, o.CreatedDate.Month })
+                .Select(g => new MonthlyProfit
                 {
                     Year = g.Key.Year,
                     Month = g.Key.Month,
-                    TotalProfit = g.Sum(o =>
-                        o.Items.Sum(i =>
-                            ((i.Product.UnitPrice - i.Product.UnitCost) * (i.Quantity ?? 0)) // Calculate profit per item and sum
-                        )
-                    )
+                    TotalProfit = g.Sum(o => o.Items.Sum(i => (i.Product.UnitPrice - i.Product.UnitCost) * (i.Quantity ?? 0)))
                 })
-                .OrderByDescending(mp => mp.Year) // Order by year descending
-                .ThenByDescending(mp => mp.Month) // Then by month descending
-                .ToListAsync();
+                .OrderByDescending(mp => mp.Year)
+                .ThenByDescending(mp => mp.Month);
+
             return profits;
         }
+
     }
 }
