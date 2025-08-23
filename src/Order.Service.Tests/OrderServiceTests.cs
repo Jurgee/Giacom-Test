@@ -154,6 +154,56 @@ namespace Order.Service.Tests
             Assert.AreEqual(1.8m, order.TotalPrice);
         }
 
+
+        [Test]
+        public async Task GetOrdersByStatusAsync_ReturnsOnlyFailedOrders()
+        {
+            // Arrange
+            var failedStatusId = Guid.NewGuid().ToByteArray();
+
+            // Add "Failed" status to reference data
+            _orderContext.OrderStatus.Add(new OrderStatus
+            {
+                Id = failedStatusId,
+                Name = "Failed"
+            });
+            await _orderContext.SaveChangesAsync();
+
+            // Add orders with different statuses
+            var failedOrderId = Guid.NewGuid();
+            var createdOrderId = Guid.NewGuid();
+
+            // Failed order
+            _orderContext.Order.Add(new Data.Entities.Order
+            {
+                Id = failedOrderId.ToByteArray(),
+                ResellerId = Guid.NewGuid().ToByteArray(),
+                CustomerId = Guid.NewGuid().ToByteArray(),
+                CreatedDate = DateTime.Now,
+                StatusId = failedStatusId
+            });
+
+            // Created order
+            _orderContext.Order.Add(new Data.Entities.Order
+            {
+                Id = createdOrderId.ToByteArray(),
+                ResellerId = Guid.NewGuid().ToByteArray(),
+                CustomerId = Guid.NewGuid().ToByteArray(),
+                CreatedDate = DateTime.Now,
+                StatusId = _orderStatusCreatedId
+            });
+
+            await _orderContext.SaveChangesAsync();
+
+            // Act
+            var failedOrders = await _orderService.GetOrdersByStatusAsync("Failed");
+
+            // Assert
+            Assert.AreEqual(1, failedOrders.Count(), "Should return only one Failed order");
+            Assert.AreEqual(failedOrderId, failedOrders.Single().Id);
+        }
+
+
         private async Task AddOrder(Guid orderId, int quantity)
         {
             var orderIdBytes = orderId.ToByteArray();
