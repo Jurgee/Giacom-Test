@@ -57,5 +57,37 @@ namespace OrderService.WebAPI.Controllers
 
             return Ok(orders);
         }
+
+        // Update the status of an order
+        [HttpPatch("{orderId}/status")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateOrderStatus(Guid orderId, [FromBody] string newStatus)
+        {
+            try
+            {
+                await _orderService.UpdateOrderStatusAsync(orderId, newStatus);
+                return Ok(new { message = $"Order '{orderId}' updated to status '{newStatus}'." });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        // Add a new order
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> AddOrder([FromBody] OrderDetail orderDetail)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState); // Automatically includes all validation errors
+
+            var newOrderId = await _orderService.AddOrderAsync(orderDetail);
+            return CreatedAtAction(nameof(GetOrderById), new { orderId = newOrderId }, new { orderId = newOrderId });
+        }
+
+
     }
 }
