@@ -70,7 +70,7 @@ namespace Order.Data
                         Quantity = i.Quantity.Value
                     })
                 }).SingleOrDefaultAsync();
-            
+
             return order;
         }
 
@@ -86,10 +86,10 @@ namespace Order.Data
         public async Task<IEnumerable<OrderSummary>> GetOrdersByStatusAsync(string status)
         {
             return await _orderContext.Order
-                .Include(x => x.Items) 
+                .Include(x => x.Items)
                 .Include(x => x.Status)
                 .Where(x => x.Status.Name == status) // Filter orders by status name
-                .Select(x => new OrderSummary 
+                .Select(x => new OrderSummary
                 {
                     Id = new Guid(x.Id),
                     ResellerId = new Guid(x.ResellerId),
@@ -104,5 +104,84 @@ namespace Order.Data
                 .OrderByDescending(x => x.CreatedDate) // Order by created date descending for better understanding
                 .ToListAsync();
         }
+        /// <summary>
+        /// Update the status of an order by its ID.
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <param name="new_status"></param>
+        /// <returns>
+        /// Updates the status of the order if both the order and the new status exist.
+        /// </returns>
+        /// <exception cref="ArgumentException"></exception>
+        public async Task UpdateOrderStatusAsync(Guid orderId, string newStatus)
+        {
+            var orderIdBytes = orderId.ToByteArray();
+            var order = await _orderContext.Order // Find the order by its ID
+                .Where(x => x.Id == orderIdBytes)
+                .SingleOrDefaultAsync();
+            if (order != null)
+            {
+                var status = await _orderContext.OrderStatus // Find the new status by its name
+                    .Where(s => s.Name == newStatus)
+                    .SingleOrDefaultAsync();
+                if (status != null)
+                {
+                    order.StatusId = status.Id;
+                    await _orderContext.SaveChangesAsync();
+                }
+                else // if the status does not exist
+                {
+                    throw new ArgumentException($"Status '{newStatus}' does not exist.");
+                }
+            }
+            else // if something deleted the order
+            {
+                throw new ArgumentException($"Order with ID '{orderId}' does not exist.");
+            }
+        }
+
+        /// <summary>
+        /// Add a new order to the database with default status "Created".
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns>
+        /// A new order ID (Guid) of the created order.
+        /// </returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task<Guid> AddOrderAsync(OrderDetail order)
+        {
+            var createdStatus = await _orderContext.OrderStatus // Create a new order with default status "Created"
+                .SingleOrDefaultAsync(s => s.Name == "Created");
+            if (createdStatus == null)
+                throw new InvalidOperationException("Default status 'Created' not found.");
+
+            var newOrder = new Entities.Order // Map OrderDetail to Order entity
+            {
+                Id = Guid.NewGuid().ToByteArray(),
+                CustomerId = order.CustomerId.ToByteArray(),
+                ResellerId = order.ResellerId.ToByteArray(),
+                StatusId = createdStatus.Id,
+                CreatedDate = DateTime.UtcNow,
+                Status = createdStatus
+            };
+
+            foreach (var item in order.Items)
+            {
+                newOrder.Items.Add(new Entities.OrderItem // Map OrderDetail.Item to OrderItem entity
+                {
+                    Id = Guid.NewGuid().ToByteArray(),
+                    ProductId = item.ProductId.ToByteArray(),
+                    ServiceId = item.ServiceId.ToByteArray(),
+                    Quantity = item.Quantity
+                });
+            }
+
+            _orderContext.Order.Add(newOrder); // Add the new order to the context
+            await _orderContext.SaveChangesAsync();
+
+            return new Guid(newOrder.Id);
+        }
+
+
     }
 }
