@@ -4,10 +4,14 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using NUnit.Framework;
 using Order.Data;
 using Order.Data.Entities;
+using Order.Model;
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
+using OrderItem = Order.Model.OrderItem;
+
 
 namespace Order.Service.Tests
 {
@@ -203,6 +207,77 @@ namespace Order.Service.Tests
             Assert.AreEqual(failedOrderId, failedOrders.Single().Id);
         }
 
+        [Test]
+        public async Task UpdateOrderStatus_ChangesOrderStatusSuccessfully()
+        {
+            // Arrange
+            var processingStatusId = Guid.NewGuid().ToByteArray(); // generate new status ID
+
+            _orderContext.OrderStatus.Add(new OrderStatus
+            {
+                Id = processingStatusId,
+                Name = "InProgress"
+            });
+            await _orderContext.SaveChangesAsync();
+            var orderId = Guid.NewGuid();
+            await AddOrder(orderId, 1);
+
+            // Act
+            await _orderService.UpdateOrderStatusAsync(orderId, "InProgress");
+
+            // Assert
+            var updatedOrder = await _orderService.GetOrderByIdAsync(orderId);
+            Assert.AreEqual("InProgress", updatedOrder.StatusName, "Order status should be updated to 'InProgress'");
+        }
+
+        [Test]
+        public async Task AddOrderAsync_CreatesOrderWithItemsSuccessfully()
+        {
+            // Arrange
+            var orderDetail = new OrderDetail
+            {
+                CustomerId = Guid.NewGuid(),
+                ResellerId = Guid.NewGuid(),
+                StatusName = "Created", // service will assign default
+                CreatedDate = DateTime.UtcNow,
+                Items = new List<OrderItem>
+                {
+                    new OrderItem
+                    {
+                        ProductId = new Guid(_orderProductEmailId), // reference data
+                        ServiceId = new Guid(_orderServiceEmailId), // reference data
+                        Quantity = 2,
+                        UnitCost = 0.8m,
+                        UnitPrice = 0.9m
+                    },
+                    new OrderItem
+                    {
+                        ProductId = new Guid(_orderProductEmailId), // reference data
+                        ServiceId = new Guid(_orderServiceEmailId), // reference data
+                        Quantity = 1,
+                        UnitCost = 0.8m,
+                        UnitPrice = 0.9m
+                    }
+                }
+
+            };
+
+            // Act
+            var newOrderId = await _orderService.AddOrderAsync(orderDetail);
+
+            // Assert
+            var createdOrder = await _orderService.GetOrderByIdAsync(newOrderId);
+
+            Assert.NotNull(createdOrder, "Order should exist after adding.");
+            Assert.AreEqual(2, createdOrder.Items.Count(), "Order should contain 2 items.");
+
+            var firstItem = createdOrder.Items.First();
+            Assert.AreEqual(2, firstItem.Quantity, "First item quantity should match.");
+            Assert.AreEqual(0.8m * 2, firstItem.TotalCost, "First item total cost should be calculated correctly.");
+            Assert.AreEqual(0.9m * 2, firstItem.TotalPrice, "First item total price should be calculated correctly.");
+        }
+
+
 
         private async Task AddOrder(Guid orderId, int quantity)
         {
@@ -216,7 +291,7 @@ namespace Order.Service.Tests
                 StatusId = _orderStatusCreatedId,
             });
 
-            _orderContext.OrderItem.Add(new OrderItem
+            _orderContext.OrderItem.Add(new Data.Entities.OrderItem()
             {
                 Id = Guid.NewGuid().ToByteArray(),
                 OrderId = orderIdBytes,
