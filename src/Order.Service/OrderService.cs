@@ -26,5 +26,11 @@ namespace Order.Service
             var order = await _orderRepository.GetOrderByIdAsync(orderId);
             return order;
         }
+
+        public async Task<IEnumerable<OrderSummary>> GetOrdersByStatusAsync(string status)
+        {
+            var orders = await _orderRepository.GetOrdersByStatusAsync(status);
+            return orders;
+        }
     }
 }
