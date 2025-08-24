@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Order.Model
 {
-    public class OrderItem
+    public class OrderItem : IValidatableObject
     {
         [Required]
         public Guid Id { get; set; }
@@ -23,7 +24,6 @@ namespace Order.Model
         [Required, StringLength(100)]
         public string ProductName { get; set; }
 
-        [Range(1, int.MaxValue)]
         public int Quantity { get; set; }
 
         [Range(0, double.MaxValue)]
@@ -37,5 +37,17 @@ namespace Order.Model
 
         [Range(0, double.MaxValue)]
         public decimal TotalPrice { get; set; }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            // Ensure Quantity is at least 1
+            if (Quantity < 1)
+            {
+                yield return new ValidationResult(
+                    "Quantity must be at least 1.",
+                    new[] { nameof(Quantity) });
+            }
+        }
+
     }
 }
