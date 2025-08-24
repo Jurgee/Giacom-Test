@@ -130,13 +130,16 @@ namespace Order.Data
 
             foreach (var item in order.Items)
             {
-                newOrder.Items.Add(new Entities.OrderItem // Add items to the new order
+                newOrder.Items.Add(new Entities.OrderItem
                 {
                     Id = Guid.NewGuid().ToByteArray(),
                     ProductId = item.ProductId.ToByteArray(),
                     ServiceId = item.ServiceId.ToByteArray(),
-                    Quantity = item.Quantity
+                    Quantity = item.Quantity,
+                    Product = await _orderContext.OrderProduct.FindAsync(item.ProductId.ToByteArray()),
+                    Service = await _orderContext.OrderService.FindAsync(item.ServiceId.ToByteArray())
                 });
+
             }
 
             _orderContext.Order.Add(newOrder); // Add the new order to the context
