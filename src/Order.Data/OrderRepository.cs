@@ -79,7 +79,7 @@ namespace Order.Data
         {
             return await _orderContext.Order
                 .Include(x => x.Status)
-                .Where(x => x.Status.Name.Equals(status, StringComparison.OrdinalIgnoreCase)) // For case-insensitive comparison
+                .Where(x => EF.Functions.Like(x.Status.Name, status)) // Filter orders by status name using case-insensitive comparison
                 .OrderByDescending(x => x.CreatedDate)
                 .ToListAsync();
         }

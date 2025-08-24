@@ -165,36 +165,39 @@ namespace Order.Service.Tests
             // Arrange
             var failedStatusId = Guid.NewGuid().ToByteArray();
 
-            // Add "Failed" status to reference data
-            _orderContext.OrderStatus.Add(new OrderStatus
+            // Ensure "Failed" status exists in context without duplicates
+            if (!_orderContext.OrderStatus.Any(s => s.Id.SequenceEqual(failedStatusId)))
             {
-                Id = failedStatusId,
-                Name = "Failed"
-            });
-            await _orderContext.SaveChangesAsync();
+                _orderContext.OrderStatus.Add(new OrderStatus
+                {
+                    Id = failedStatusId,
+                    Name = "Failed"
+                });
+                await _orderContext.SaveChangesAsync();
+            }
 
-            // Add orders with different statuses
+            // Add orders
             var failedOrderId = Guid.NewGuid();
             var createdOrderId = Guid.NewGuid();
 
-            // Failed order
             _orderContext.Order.Add(new Data.Entities.Order
             {
                 Id = failedOrderId.ToByteArray(),
                 ResellerId = Guid.NewGuid().ToByteArray(),
                 CustomerId = Guid.NewGuid().ToByteArray(),
-                CreatedDate = DateTime.Now,
-                StatusId = failedStatusId
+                CreatedDate = DateTime.UtcNow,
+                StatusId = failedStatusId,
+                Status = await _orderContext.OrderStatus.FindAsync(failedStatusId) // attach existing status
             });
 
-            // Created order
             _orderContext.Order.Add(new Data.Entities.Order
             {
                 Id = createdOrderId.ToByteArray(),
                 ResellerId = Guid.NewGuid().ToByteArray(),
                 CustomerId = Guid.NewGuid().ToByteArray(),
-                CreatedDate = DateTime.Now,
-                StatusId = _orderStatusCreatedId
+                CreatedDate = DateTime.UtcNow,
+                StatusId = _orderStatusCreatedId,
+                Status = await _orderContext.OrderStatus.FindAsync(_orderStatusCreatedId) // attach existing status
             });
 
             await _orderContext.SaveChangesAsync();
@@ -204,8 +207,13 @@ namespace Order.Service.Tests
 
             // Assert
             Assert.AreEqual(1, failedOrders.Count(), "Should return only one Failed order");
-            Assert.AreEqual(failedOrderId, failedOrders.Single().Id);
+
+            var returnedOrder = failedOrders.Single();
+            Assert.AreEqual(failedOrderId, returnedOrder.Id, "Returned order ID should match the failed order");
+            Assert.AreEqual("Failed", returnedOrder.StatusName, "Returned order should have status 'Failed'");
         }
+
+
 
         [Test]
         public async Task UpdateOrderStatus_ChangesOrderStatusSuccessfully()
