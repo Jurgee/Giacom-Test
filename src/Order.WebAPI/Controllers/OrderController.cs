@@ -85,10 +85,18 @@ namespace OrderService.WebAPI.Controllers
         public async Task<IActionResult> AddOrder([FromBody] OrderDetail orderDetail)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState); // Automatically includes all validation errors
+                return BadRequest(ModelState);
 
-            var newOrderId = await _orderService.AddOrderAsync(orderDetail);
-            return CreatedAtAction(nameof(GetOrderById), new { orderId = newOrderId }, new { orderId = newOrderId });
+            try
+            {
+                var newOrderId = await _orderService.AddOrderAsync(orderDetail);
+                return CreatedAtAction(nameof(GetOrderById), new { orderId = newOrderId }, new { orderId = newOrderId });
+            }
+            catch (InvalidOperationException ex)
+            {
+                // known, expected case (missing Created status)
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         // Get monthly profits
