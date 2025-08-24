@@ -45,11 +45,19 @@ namespace OrderService.WebAPI.Controllers
 
         // Get all orders by their status (e.g., "Created", "InProgress", "Completed", "Failed")
         [HttpGet("status/{status}")]
-        [ProducesResponseType(StatusCodes.Status200OK)] // Success
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<IEnumerable<OrderSummary>>> GetOrdersByStatus(string status)
         {
             var orders = await _orderService.GetOrdersByStatusAsync(status);
-            return Ok(orders);
+            if (orders != null)
+            {
+                return Ok(orders);
+            }
+            else
+            {
+                return NotFound();
+            }
         }
 
 
@@ -66,7 +74,7 @@ namespace OrderService.WebAPI.Controllers
             }
             catch (ArgumentException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new { error = ex.Message }); // The status or orderId was invalid
             }
         }
 

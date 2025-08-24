@@ -75,19 +75,19 @@ namespace Order.Data
         }
 
         /// <summary>
-        /// Get orders by status name (e.g., "Pending", "Completed", etc.)
+        /// Retrieves all orders that have the specified status
         /// </summary>
         /// <param name="status">
-        /// The status of the orders to retrieve.
+        /// The status of the orders to retrieve
         /// </param>
         /// <returns>
-        /// A list of orders with the specified status.
+        /// A list of orders with the specified status
         /// </returns>
         public async Task<IEnumerable<OrderSummary>> GetOrdersByStatusAsync(string status)
         {
             return await _orderContext.Order
-                .Include(x => x.Items)
-                .Include(x => x.Status)
+                .Include(x => x.Items) // Include order items
+                .Include(x => x.Status) // Include order status
                 .Where(x => x.Status.Name == status) // Filter orders by status name
                 .Select(x => new OrderSummary
                 {
@@ -104,13 +104,16 @@ namespace Order.Data
                 .OrderByDescending(x => x.CreatedDate) // Order by created date descending for better understanding
                 .ToListAsync();
         }
+
         /// <summary>
-        /// Update the status of an order by its ID.
+        /// Update the status of an order by its ID
         /// </summary>
-        /// <param name="orderId"></param>
-        /// <param name="new_status"></param>
+        /// <param name="orderId">The ID of the order to update
+        /// </param>
+        /// <param name="newStatus">The new status to set
+        /// </param>
         /// <returns>
-        /// Updates the status of the order if both the order and the new status exist.
+        /// Updates the status of the order if both the order and the new status exist
         /// </returns>
         /// <exception cref="ArgumentException"></exception>
         public async Task UpdateOrderStatusAsync(Guid orderId, string newStatus)
@@ -129,23 +132,25 @@ namespace Order.Data
                     order.StatusId = status.Id; // Update the order's status ID
                     await _orderContext.SaveChangesAsync();
                 }
-                else // if the status does not exist
+                else
                 {
-                    throw new ArgumentException($"Status '{newStatus}' does not exist.");
+                    throw new ArgumentException($"Status '{newStatus}' does not exist."); // If the new status does not exist
                 }
             }
-            else // if something deleted the order
+            else
             {
-                throw new ArgumentException($"Order with ID '{orderId}' does not exist.");
+                throw new ArgumentException($"Order with ID '{orderId}' does not exist."); // If the order does not exist
             }
         }
 
         /// <summary>
-        /// Add a new order to the database with default status "Created".
+        /// Add a new order to the database with default status "Created"
         /// </summary>
-        /// <param name="order"></param>
+        /// <param name="order">
+        /// The order details to create
+        /// </param>
         /// <returns>
-        /// A new order ID (Guid) of the created order.
+        /// A new order ID (Guid) of the created order
         /// </returns>
         /// <exception cref="InvalidOperationException"></exception>
         public async Task<Guid> AddOrderAsync(OrderDetail order)
@@ -153,7 +158,7 @@ namespace Order.Data
             var createdStatus = await _orderContext.OrderStatus // Create a new order with default status "Created"
                 .SingleOrDefaultAsync(s => s.Name == "Created");
             if (createdStatus == null)
-                throw new InvalidOperationException("Default status 'Created' not found.");
+                throw new InvalidOperationException("Default status 'Created' not found."); // Ensure the "Created" status exists
 
             var newOrder = new Entities.Order // Create a new Order entity
             {
@@ -183,26 +188,26 @@ namespace Order.Data
         }
 
         /// <summary>
-        /// Get monthly profits calculated from completed orders.
+        /// Get monthly profits calculated from completed orders
         /// </summary>
         /// <returns>
-        /// Monthly profits with year, month, and total profit.
+        /// Monthly profits with year, month, and total profit
         /// </returns>
         public async Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync()
         {
-            var orders = await _orderContext.Order
+            var orders = await _orderContext.Order // Load completed orders with their items and products
                 .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
-                .Where(o => o.Status.Name == "Completed")
-                .ToListAsync(); // load into memory
+                .Where(o => o.Status.Name == "Completed") // Only consider completed orders
+                .ToListAsync();
 
-            var profits = orders
+            var profits = orders // Calculate profits grouped by year and month
                 .GroupBy(o => new { o.CreatedDate.Year, o.CreatedDate.Month })
-                .Select(g => new MonthlyProfit
+                .Select(g => new MonthlyProfit // Project to MonthlyProfit model
                 {
                     Year = g.Key.Year,
                     Month = g.Key.Month,
-                    TotalProfit = g.Sum(o => o.Items.Sum(i => (i.Product.UnitPrice - i.Product.UnitCost) * (i.Quantity ?? 0)))
+                    TotalProfit = g.Sum(o => o.Items.Sum(i => (i.Product.UnitPrice - i.Product.UnitCost) * (i.Quantity ?? 0))) // Profit calculation
                 })
                 .OrderByDescending(mp => mp.Year)
                 .ThenByDescending(mp => mp.Month);
