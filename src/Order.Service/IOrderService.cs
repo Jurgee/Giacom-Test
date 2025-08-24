@@ -12,19 +12,42 @@ namespace Order.Service
         Task<OrderDetail> GetOrderByIdAsync(Guid orderId);
 
         /// <summary>
-        /// Retrieve all orders filtered by their status.
+        /// Retrieves all orders that have the specified status
         /// </summary>
-        /// <param name="status"></param>
+        /// <param name="status">
+        /// The status of the orders to retrieve
+        /// </param>
         /// <returns>
         /// A list of orders with the specified status
         /// </returns>
         Task<IEnumerable<OrderSummary>> GetOrdersByStatusAsync(string status);
 
-        Task UpdateOrderStatusAsync(Guid orderId, string newStatus); // Update status of the order
+        /// <summary>
+        /// Update the status of an order by its ID.
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <param name="newStatus"></param>
+        /// <returns>
+        /// Updates the status of the order if both the order and the new status exist
+        /// </returns>
+        Task UpdateOrderStatusAsync(Guid orderId, string newStatus);
 
-        Task<Guid> AddOrderAsync(OrderDetail orderDetail); // Add a new order and return its ID
+        /// <summary>
+        /// Add a new order to the database with default status "Created".
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns>
+        /// The ID of the newly created order
+        /// </returns>
+        Task<Guid> AddOrderAsync(OrderDetail order);
 
-        Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync(); // Get monthly profits
+        /// <summary>
+        /// Get monthly profits calculated from completed orders.
+        /// </summary>
+        /// <returns>
+        /// Monthly profits with year, month, and total profit
+        /// </returns>
+        Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync();
 
     }
 }

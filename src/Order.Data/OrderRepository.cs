@@ -84,17 +84,6 @@ namespace Order.Data
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Update the status of an order by its ID
-        /// </summary>
-        /// <param name="orderId">The ID of the order to update
-        /// </param>
-        /// <param name="newStatus">The new status to set
-        /// </param>
-        /// <returns>
-        /// Updates the status of the order if both the order and the new status exist
-        /// </returns>
-        /// <exception cref="ArgumentException"></exception>
         public async Task UpdateOrderStatusAsync(Guid orderId, string newStatus)
         {
             var orderIdBytes = orderId.ToByteArray();
@@ -122,16 +111,6 @@ namespace Order.Data
             }
         }
 
-        /// <summary>
-        /// Add a new order to the database with default status "Created"
-        /// </summary>
-        /// <param name="order">
-        /// The order details to create
-        /// </param>
-        /// <returns>
-        /// A new order ID (Guid) of the created order
-        /// </returns>
-        /// <exception cref="InvalidOperationException"></exception>
         public async Task<Guid> AddOrderAsync(OrderDetail order)
         {
             var createdStatus = await _orderContext.OrderStatus // Create a new order with default status "Created"
@@ -166,12 +145,7 @@ namespace Order.Data
             return new Guid(newOrder.Id);
         }
 
-        /// <summary>
-        /// Get monthly profits calculated from completed orders
-        /// </summary>
-        /// <returns>
-        /// Monthly profits with year, month, and total profit
-        /// </returns>
+
         public async Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync()
         {
             var orders = await _orderContext.Order // Load completed orders with their items and products
