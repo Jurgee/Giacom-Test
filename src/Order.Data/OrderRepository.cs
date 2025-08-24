@@ -74,34 +74,13 @@ namespace Order.Data
             return order;
         }
 
-        /// <summary>
-        /// Retrieves all orders that have the specified status
-        /// </summary>
-        /// <param name="status">
-        /// The status of the orders to retrieve
-        /// </param>
-        /// <returns>
-        /// A list of orders with the specified status
-        /// </returns>
-        public async Task<IEnumerable<OrderSummary>> GetOrdersByStatusAsync(string status)
+
+        public async Task<IEnumerable<Data.Entities.Order>> GetOrdersByStatusAsync(string status)
         {
             return await _orderContext.Order
-                .Include(x => x.Items) // Include order items
-                .Include(x => x.Status) // Include order status
-                .Where(x => x.Status.Name == status) // Filter orders by status name
-                .Select(x => new OrderSummary
-                {
-                    Id = new Guid(x.Id),
-                    ResellerId = new Guid(x.ResellerId),
-                    CustomerId = new Guid(x.CustomerId),
-                    StatusId = new Guid(x.StatusId),
-                    StatusName = x.Status.Name,
-                    ItemCount = x.Items.Count,
-                    TotalCost = x.Items.Sum(i => i.Quantity * i.Product.UnitCost).Value,
-                    TotalPrice = x.Items.Sum(i => i.Quantity * i.Product.UnitPrice).Value,
-                    CreatedDate = x.CreatedDate
-                })
-                .OrderByDescending(x => x.CreatedDate) // Order by created date descending for better understanding
+                .Include(x => x.Status)
+                .Where(x => x.Status.Name.Equals(status, StringComparison.OrdinalIgnoreCase)) // For case-insensitive comparison
+                .OrderByDescending(x => x.CreatedDate)
                 .ToListAsync();
         }
 

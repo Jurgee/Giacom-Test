@@ -2,6 +2,7 @@
 using Order.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Order.Service
@@ -29,9 +30,22 @@ namespace Order.Service
 
         public async Task<IEnumerable<OrderSummary>> GetOrdersByStatusAsync(string status)
         {
-            var orders = await _orderRepository.GetOrdersByStatusAsync(status);
-            return orders;
+            var orders = await _orderRepository.GetOrdersByStatusAsync(status); // Get all orders by their status
+
+            return orders.Select(x => new OrderSummary // Map to OrderSummary
+            {
+                Id = new Guid(x.Id),
+                ResellerId = new Guid(x.ResellerId),
+                CustomerId = new Guid(x.CustomerId),
+                StatusId = new Guid(x.StatusId),
+                StatusName = x.Status.Name,
+                ItemCount = x.Items.Count,
+                TotalCost = x.Items.Sum(i => i.Quantity * i.Product.UnitCost).Value,
+                TotalPrice = x.Items.Sum(i => i.Quantity * i.Product.UnitPrice).Value,
+                CreatedDate = x.CreatedDate
+            });
         }
+
 
         public async Task UpdateOrderStatusAsync(Guid orderId, string newStatus)
         {

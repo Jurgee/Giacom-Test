@@ -11,7 +11,16 @@ namespace Order.Data
 
         Task<OrderDetail> GetOrderByIdAsync(Guid orderId);
 
-        Task<IEnumerable<OrderSummary>> GetOrdersByStatusAsync(string status); // Get all orders by their status
+        /// <summary>
+        /// Retrieves all orders that have the specified status
+        /// </summary>
+        /// <param name="status">
+        /// The status of the orders to retrieve
+        /// </param>
+        /// <returns>
+        /// A list of orders with the specified status
+        /// </returns>
+        Task<IEnumerable<Data.Entities.Order>> GetOrdersByStatusAsync(string status); // Get all orders by their status
 
         Task UpdateOrderStatusAsync(Guid orderId, string newStatus); // Update status of the order
 
