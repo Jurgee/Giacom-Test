@@ -58,6 +58,13 @@ namespace Order.Model
 
             if (TotalPrice < 0)
                 yield return new ValidationResult("TotalPrice cannot be negative.", new[] { nameof(TotalPrice) });
+
+            if (TotalPrice < TotalCost)
+            {
+                yield return new ValidationResult(
+                    "TotalPrice cannot be less than TotalCost.",
+                    new[] { nameof(TotalPrice), nameof(TotalCost) });
+            }
         }
     }
 }
