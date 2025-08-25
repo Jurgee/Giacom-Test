@@ -53,7 +53,7 @@ namespace Order.Data
         /// <returns>
         /// Monthly profits with year, month, and total profit
         /// </returns>
-        Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync();
+        Task<IEnumerable<(int Year, int Month, decimal TotalProfit)>> GetMonthlyProfitsAsync();
 
     }
 }

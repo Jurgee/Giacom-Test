@@ -149,27 +149,27 @@ namespace Order.Data
         }
 
 
-        public async Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync()
+        public async Task<IEnumerable<(int Year, int Month, decimal TotalProfit)>> GetMonthlyProfitsAsync()
         {
-            var orders = await _orderContext.Order // Load completed orders with their items and products
+            var orders = await _orderContext.Order // Get all completed orders with their items and products
                 .Include(o => o.Items)
                 .ThenInclude(i => i.Product)
                 .Where(o => o.Status.Name == "Completed") // Only consider completed orders
                 .ToListAsync();
 
-            var profits = orders // Calculate profits grouped by year and month
+            var profits = orders // Calculate monthly profits
                 .GroupBy(o => new { o.CreatedDate.Year, o.CreatedDate.Month })
-                .Select(g => new MonthlyProfit // Project to MonthlyProfit model
-                {
-                    Year = g.Key.Year,
-                    Month = g.Key.Month,
-                    TotalProfit = g.Sum(o => o.Items.Sum(i => (i.Product.UnitPrice - i.Product.UnitCost) * (i.Quantity ?? 0))) // Profit calculation
-                })
-                .OrderByDescending(mp => mp.Year)
-                .ThenByDescending(mp => mp.Month);
+                .Select(g => (
+                    g.Key.Year,
+                    g.Key.Month,
+                    g.Sum(o => o.Items.Sum(i => (i.Product.UnitPrice - i.Product.UnitCost) * (i.Quantity ?? 0)))
+                ))
+                .OrderByDescending(x => x.Year)
+                .ThenByDescending(x => x.Month);
 
             return profits;
         }
+
 
     }
 }

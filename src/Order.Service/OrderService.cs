@@ -60,8 +60,15 @@ namespace Order.Service
 
         public async Task<IEnumerable<MonthlyProfit>> GetMonthlyProfitsAsync()
         {
-            var profits = await _orderRepository.GetMonthlyProfitsAsync();
-            return profits;
+            var rawProfits = await _orderRepository.GetMonthlyProfitsAsync();
+
+            return rawProfits.Select(x => new MonthlyProfit
+            {
+                Year = x.Year,
+                Month = x.Month,
+                TotalProfit = x.TotalProfit
+            });
         }
+
     }
 }
