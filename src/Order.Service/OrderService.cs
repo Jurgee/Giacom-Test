@@ -32,7 +32,7 @@ namespace Order.Service
         {
             var orders = await _orderRepository.GetOrdersByStatusAsync(status); // Get all orders by their status
 
-            return orders.Select(x => new OrderSummary // Map to OrderSummary
+            return orders.Select(x => new OrderSummary // Map to OrderSummary (DAL to BLL)
             {
                 Id = new Guid(x.Id),
                 ResellerId = new Guid(x.ResellerId),

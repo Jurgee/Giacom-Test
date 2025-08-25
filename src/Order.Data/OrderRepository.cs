@@ -130,7 +130,7 @@ namespace Order.Data
 
             foreach (var item in order.Items)
             {
-                newOrder.Items.Add(new Entities.OrderItem
+                newOrder.Items.Add(new Entities.OrderItem // Add each item to the order
                 {
                     Id = Guid.NewGuid().ToByteArray(),
                     ProductId = item.ProductId.ToByteArray(),

@@ -25,14 +25,15 @@ namespace Order.Data
         /// <summary>
         /// Update the status of an order by its ID
         /// </summary>
-        /// <param name="orderId">The ID of the order to update
+        /// <param name="orderId">
+        /// The ID of the order to update
         /// </param>
-        /// <param name="newStatus">The new status to set
+        /// <param name="newStatus">
+        /// The new status to set
         /// </param>
         /// <returns>
         /// Updates the status of the order if both the order and the new status exist
         /// </returns>
-        /// <exception cref="ArgumentException"></exception>
         Task UpdateOrderStatusAsync(Guid orderId, string newStatus);
 
         /// <summary>

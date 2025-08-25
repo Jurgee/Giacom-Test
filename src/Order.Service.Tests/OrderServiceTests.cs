@@ -305,9 +305,9 @@ namespace Order.Service.Tests
         public async Task UpdateOrderStatus_ChangesOrderStatusSuccessfully()
         {
             // Arrange
-            var processingStatusId = Guid.NewGuid().ToByteArray(); // generate new status ID
+            var processingStatusId = Guid.NewGuid().ToByteArray();
 
-            _orderContext.OrderStatus.Add(new OrderStatus
+            _orderContext.OrderStatus.Add(new OrderStatus // Add "InProgress" status to reference data
             {
                 Id = processingStatusId,
                 Name = "InProgress"
@@ -383,11 +383,10 @@ namespace Order.Service.Tests
         [Test]
         public async Task AddOrderAsync_CreatesOrderWithItemsSuccessfully()
         {
-            // Arrange: ensure reference data exists
+            // Arrange
             var serviceId = _orderServiceEmailId;
             var productId = _orderProductEmailId;
 
-            // Make sure OrderService exists
             if (!await _orderContext.OrderService.AnyAsync(s => s.Id == serviceId))
             {
                 _orderContext.OrderService.Add(new Data.Entities.OrderService
@@ -397,7 +396,6 @@ namespace Order.Service.Tests
                 });
             }
 
-            // Make sure OrderProduct exists
             if (!await _orderContext.OrderProduct.AnyAsync(p => p.Id == productId))
             {
                 _orderContext.OrderProduct.Add(new Data.Entities.OrderProduct
@@ -416,7 +414,7 @@ namespace Order.Service.Tests
             {
                 CustomerId = Guid.NewGuid(),
                 ResellerId = Guid.NewGuid(),
-                StatusName = "Created", // service will assign default
+                StatusName = "Created",
                 CreatedDate = DateTime.UtcNow,
                 Items = new List<OrderItem>
             {
@@ -491,7 +489,7 @@ namespace Order.Service.Tests
             // Act: validate using IValidatableObject
             var validationResults = orderItem.Validate(new ValidationContext(orderItem)).ToList();
 
-            // Assert: should fail for Quantity
+            // Assert
             Assert.IsTrue(validationResults.Any(vr => vr.MemberNames.Contains(nameof(OrderItem.Quantity))),
                 "Quantity must be at least 1.");
         }
