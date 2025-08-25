@@ -30,10 +30,8 @@ namespace Order.Model
 
         public decimal UnitPrice { get; set; }
 
-        [Range(0, double.MaxValue)]
         public decimal TotalCost { get; set; }
 
-        [Range(0, double.MaxValue)]
         public decimal TotalPrice { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

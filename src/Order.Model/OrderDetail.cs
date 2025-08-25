@@ -53,6 +53,14 @@ namespace Order.Model
                 }
             }
 
+            // Ensure CreatedDate is not in the future
+            if (CreatedDate > DateTime.UtcNow)
+            {
+                yield return new ValidationResult(
+                    "CreatedDate cannot be in the future.",
+                    new[] { nameof(CreatedDate) });
+            }
+
             if (TotalCost < 0)
                 yield return new ValidationResult("TotalCost cannot be negative.", new[] { nameof(TotalCost) });
 
