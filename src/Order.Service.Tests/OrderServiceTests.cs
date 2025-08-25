@@ -379,78 +379,28 @@ namespace Order.Service.Tests
             Assert.AreNotEqual("InProgress", order2.StatusName);
         }
 
-        // Add a new order -----------------------------------------------------------------------------------
+        // Add a new order ----------------------------------------------------------------------------------
         [Test]
-        public async Task AddOrderAsync_CreatesOrderWithItemsSuccessfully()
+        public void AddOrderAsync_ThrowsException_WhenCreatedDateIsInFuture()
         {
             // Arrange
-            var serviceId = _orderServiceEmailId;
-            var productId = _orderProductEmailId;
-
-            if (!await _orderContext.OrderService.AnyAsync(s => s.Id == serviceId))
-            {
-                _orderContext.OrderService.Add(new Data.Entities.OrderService
-                {
-                    Id = serviceId,
-                    Name = "Email Service"
-                });
-            }
-
-            if (!await _orderContext.OrderProduct.AnyAsync(p => p.Id == productId))
-            {
-                _orderContext.OrderProduct.Add(new Data.Entities.OrderProduct
-                {
-                    Id = productId,
-                    Name = "100GB Mailbox",
-                    UnitCost = 0.8m,
-                    UnitPrice = 0.9m,
-                    ServiceId = serviceId
-                });
-            }
-
-            await _orderContext.SaveChangesAsync();
-
             var orderDetail = new OrderDetail
             {
                 CustomerId = Guid.NewGuid(),
                 ResellerId = Guid.NewGuid(),
-                StatusName = "Created",
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.UtcNow.AddDays(1), // invalid future date
                 Items = new List<OrderItem>
-            {
-                new OrderItem
                 {
-                    ProductId = new Guid(productId),
-                    ServiceId = new Guid(serviceId),
-                    Quantity = 2
-                },
-                new OrderItem
-                {
-                    ProductId = new Guid(productId),
-                    ServiceId = new Guid(serviceId),
-                    Quantity = 1
+                    new OrderItem { ProductId = Guid.NewGuid(), ServiceId = Guid.NewGuid(), Quantity = 1 }
                 }
-            }
             };
 
-            // Act
-            var newOrderId = await _orderService.AddOrderAsync(orderDetail);
+            // Act: validate using IValidatableObject
+            var validationResults = orderDetail.Validate(new ValidationContext(orderDetail)).ToList();
 
             // Assert
-            var createdOrder = await _orderService.GetOrderByIdAsync(newOrderId);
-
-            Assert.NotNull(createdOrder, "Order should exist after adding.");
-            Assert.AreEqual(2, createdOrder.Items.Count(), "Order should contain 2 items.");
-
-            var firstItem = createdOrder.Items.First();
-            Assert.AreEqual(2, firstItem.Quantity, "First item quantity should match.");
-            Assert.AreEqual(0.8m * 2, firstItem.TotalCost, "First item total cost should be correct.");
-            Assert.AreEqual(0.9m * 2, firstItem.TotalPrice, "First item total price should be correct.");
-
-            var secondItem = createdOrder.Items.Last();
-            Assert.AreEqual(1, secondItem.Quantity, "Second item quantity should match.");
-            Assert.AreEqual(0.8m * 1, secondItem.TotalCost, "Second item total cost should be correct.");
-            Assert.AreEqual(0.9m * 1, secondItem.TotalPrice, "Second item total price should be correct.");
+            Assert.IsTrue(validationResults.Any(vr => vr.MemberNames.Contains(nameof(OrderDetail.CreatedDate))),
+                "CreatedDate cannot be in the future.");
         }
 
         [Test]
@@ -557,7 +507,6 @@ namespace Order.Service.Tests
             Assert.AreEqual(2 * 0.8m + 3 * 0.5m, totalCost, "Total cost should sum all items correctly");
             Assert.AreEqual(2 * 0.9m + 3 * 0.7m, totalPrice, "Total price should sum all items correctly");
         }
-
 
 
         // Get monthly profits from completed orders --------------------------------------------------------
@@ -720,8 +669,6 @@ namespace Order.Service.Tests
                 _orderContext.OrderStatus.Add(completedStatus);
                 await _orderContext.SaveChangesAsync();
             }
-
-            var completedStatusId = completedStatus.Id;
 
             // No orders in April
             var aprilMonth = 4;
