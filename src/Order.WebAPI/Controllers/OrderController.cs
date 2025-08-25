@@ -84,13 +84,13 @@ namespace OrderService.WebAPI.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> AddOrder([FromBody] OrderDetail orderDetail)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid) // check for validation errors
                 return BadRequest(ModelState);
 
             try
             {
                 var newOrderId = await _orderService.AddOrderAsync(orderDetail);
-                return CreatedAtAction(nameof(GetOrderById), new { orderId = newOrderId }, new { orderId = newOrderId });
+                return CreatedAtAction(nameof(GetOrderById), new { orderId = newOrderId }, new { orderId = newOrderId }); // Created with the new order ID
             }
             catch (InvalidOperationException ex)
             {
