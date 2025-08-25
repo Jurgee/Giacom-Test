@@ -62,7 +62,7 @@ namespace Order.Service
         {
             var rawProfits = await _orderRepository.GetMonthlyProfitsAsync();
 
-            return rawProfits.Select(x => new MonthlyProfit
+            return rawProfits.Select(x => new MonthlyProfit // Map to MonthlyProfit (DAL to BLL)
             {
                 Year = x.Year,
                 Month = x.Month,
